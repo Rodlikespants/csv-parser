@@ -1,4 +1,4 @@
-package services;
+package resources;
 
 import com.codahale.metrics.annotation.Timed;
 import db.PersonDB;
@@ -17,19 +17,18 @@ public class PersonResource {
 
     @GET
     @Timed
-    @Path("/get/{id}")
+    @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Person getPerson(@PathParam("id") ObjectId id) {
         return PersonDB.getById(id);
     }
 
-    @GET
+    @DELETE
     @Timed
-    @Path("/remove")
     @Produces(MediaType.TEXT_PLAIN)
     public String removePerson() {
         PersonDB.remove();
-        return "Last person remove. Total count: " + PersonDB.getCount();
+        return "Last person removed. Total count: " + PersonDB.getCount();
     }
 
     @GET
@@ -42,7 +41,6 @@ public class PersonResource {
 
     @POST
     @Timed
-    @Path("/save")
     @Produces(MediaType.TEXT_PLAIN)
     @Consumes({MediaType.APPLICATION_JSON})
     public String addPerson(Person person) {

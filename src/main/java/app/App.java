@@ -6,7 +6,7 @@ import io.dropwizard.Application;
 import io.dropwizard.setup.Environment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import services.PersonResource;
+import resources.PersonResource;
 
 /**
  * java -jar sample-dropwizard-rest-stub-1.0-SNAPSHOT.jar server ../config.yml
