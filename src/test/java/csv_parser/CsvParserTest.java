@@ -10,6 +10,7 @@ import java.io.Reader;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+// import static org.junit.Assert.assertTrue;
 
 public class CsvParserTest {
     public Map<String, String> AUTHOR_BOOK_MAP = Map.of(
@@ -32,6 +33,7 @@ public class CsvParserTest {
             String author = record.get("author");
             String title = record.get("title");
             assertEquals(AUTHOR_BOOK_MAP.get(author), title);
+//            assertTrue(1 == 1);
         }
     }
 }

@@ -1,4 +1,4 @@
-package com.automationrhapsody.reststub;
+package app;
 
 import junit.framework.Test;
 import junit.framework.TestCase;

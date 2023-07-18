@@ -1,11 +1,11 @@
-package com.automationrhapsody.reststub.config;
+package config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dropwizard.Configuration;
 
 import javax.validation.constraints.NotEmpty;
 
-public class CsvParserConfig extends Configuration {
+public class AppConfig extends Configuration {
     @NotEmpty
     private String version;
 
