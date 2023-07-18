@@ -1,9 +1,12 @@
 package models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jackson.ObjectIdSerializer;
+import org.bson.types.ObjectId;
 
 public class Person {
-    private int id;
+    private ObjectId id;
     private String firstName;
     private String lastName;
     private String email;
@@ -12,7 +15,7 @@ public class Person {
         // Needed by Jackson deserialization
     }
 
-    public Person(int id, String firstName, String lastName, String email) {
+    public Person(ObjectId id, String firstName, String lastName, String email) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -20,7 +23,8 @@ public class Person {
     }
 
     @JsonProperty
-    public int getId() {
+    @JsonSerialize(using = ObjectIdSerializer.class)
+    public ObjectId getId() {
         return id;
     }
 
@@ -39,3 +43,4 @@ public class Person {
         return email;
     }
 }
+

@@ -3,22 +3,23 @@ package services;
 import com.codahale.metrics.annotation.Timed;
 import db.PersonDB;
 import models.Person;
+import org.bson.types.ObjectId;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 
 @Path("/person")
-public class PersonService {
+public class PersonResource {
 
-    public PersonService() {
+    public PersonResource() {
     }
 
     @GET
     @Timed
     @Path("/get/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Person getPerson(@PathParam("id") int id) {
+    public Person getPerson(@PathParam("id") ObjectId id) {
         return PersonDB.getById(id);
     }
 
