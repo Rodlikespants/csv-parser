@@ -2,6 +2,7 @@ package csv_parser;
 
 import app.App;
 import models.ParkingTransaction;
+import models.ParkingVisitTransaction;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.joda.time.DateTime;
@@ -12,8 +13,11 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import static java.util.stream.Collectors.groupingBy;
 
 /**
  * Metropolis instructions:
@@ -27,27 +31,6 @@ import java.util.Arrays;
  */
 public class CsvParserUtil {
     private static final Logger LOGGER = LoggerFactory.getLogger(App.class);
-
-    // TODO use String constants instead
-    public enum Columns {
-        id("ID"),
-        entryTime("entry time"),
-        exitTime("exit time"),
-        totalPrice("total price"),
-        userId("user ID"),
-        site("site");
-
-        private String name;
-
-        Columns(String name) {
-            this.name = name;
-        }
-
-        @Override
-        public String toString() {
-            return name;
-        }
-    }
 
     /**
      *
@@ -64,27 +47,110 @@ public class CsvParserUtil {
 
         return csvFormat.parse(in);
     }
+
+    public static List<CSVRecord> getRecordList(String filename, String[] headers) throws IOException {
+        Iterable<CSVRecord> recordIter = getRecords(filename, headers);
+        return StreamSupport.stream(recordIter.spliterator(), false).toList();
+    }
+
+    public static Map<Long, BigDecimal> calculateRevenueBySite(List<ParkingVisitTransaction> txns) {
+        return txns.stream()
+                .filter(pt -> pt.getPaymentStatus() == ParkingVisitTransaction.PaymentStatus.paymentCompleted)
+                .collect(groupingBy(ParkingVisitTransaction::getSiteId,
+                        Collectors.reducing(
+                                BigDecimal.ZERO,
+                                ParkingVisitTransaction::getPrice,
+                                BigDecimal::add
+                        )
+                ));
+    }
+
+    public static Map<Long, Integer> calculateMaxOccupancyBySite(List<ParkingVisitTransaction> txns) {
+        Map<Long, List<ParkingVisitTransaction>> txnsBySite = txns.stream().collect(groupingBy(ParkingVisitTransaction::getSiteId));
+        Map<Long, Integer> maxOccupancyBySite = new HashMap<>();
+        for (Long siteId : txnsBySite.keySet()) {
+            List<ParkingVisitTransaction> siteTxns = txnsBySite.get(siteId);
+            // sort by entry time
+            PriorityQueue<DateTime> minHeap = new PriorityQueue<>();
+            for (ParkingVisitTransaction siteTxn: siteTxns) {
+                if (!minHeap.isEmpty() && siteTxn.getEntryTime().compareTo(minHeap.peek()) > 0) {
+                    minHeap.poll();
+                }
+                minHeap.offer(siteTxn.getExitTime());
+            }
+            maxOccupancyBySite.put(siteId, minHeap.size());
+        }
+
+        return maxOccupancyBySite;
+    }
+
+    public static List<ParkingVisitTransaction> transformRecordsToTxns(List<CSVRecord> recordList) {
+        return recordList.stream()
+                .map(record -> new ParkingVisitTransaction(
+                        Long.parseLong(record.get("transaction_id")),
+                        Long.parseLong(record.get("site_id")),
+                        Long.parseLong(record.get("user_id")),
+                        Long.parseLong(record.get("vehicle_id")),
+                        ParkingVisitTransaction.PaymentStatus.convert(record.get("payment_status")),
+                        new DateTime(record.get("entry_time")),
+                        new DateTime(record.get("exit_time")),
+                        new BigDecimal(record.get("price"))))
+                .toList();
+    }
+
     public static void main(String[] args) {
-        String filename = "src/test/java/resources/example2.csv";
-        String[] headers = Arrays.stream(Columns.values()).map(it -> it.name).toArray(String[]::new);
-        Iterable<CSVRecord> records = new ArrayList<>();
+        String filename = "src/test/java/fixtures/metropolis_visit_data.csv";
+        List<CSVRecord> recordList = new ArrayList<>();
         try {
-            records = CsvParserUtil.getRecords(filename, headers);
+            String[] headers = new String[] {"transaction_id", "site_id", "user_id","vehicle_id","payment_status","entry_time","exit_time","price"};
+            recordList = CsvParserUtil.getRecordList(filename, headers);
         } catch (IOException e) {
             // ...
         }
 
-        for (CSVRecord record: records) {
-            LOGGER.info("Record: " + record);
-            ParkingTransaction pt = new ParkingTransaction(
-                    Long.parseLong(record.get(Columns.id.name)),
-                    Long.parseLong(record.get(Columns.userId.name).trim()),
-                    new DateTime(record.get(Columns.entryTime.name).trim()),
-                    new DateTime(record.get(Columns.exitTime.name).trim()),
-                    new BigDecimal(record.get(Columns.totalPrice.name).trim().replaceAll("[$]", "")),
-                    record.get(Columns.site.name).trim()
-            );
-            LOGGER.info("Parking Transaction: " + pt);
+        List<ParkingVisitTransaction> txns = transformRecordsToTxns(recordList);
+//        for (CSVRecord record: records) {
+//            ParkingVisitTransaction pt = new ParkingVisitTransaction(
+//                    Long.parseLong(record.get("transaction_id")),
+//                    Long.parseLong(record.get("site_id")),
+//                    Long.parseLong(record.get("user_id")),
+//                    Long.parseLong(record.get("vehicle_id")),
+//                    ParkingVisitTransaction.PaymentStatus.convert(record.get("payment_status")),
+//                    new DateTime(record.get("entry_time")),
+//                    new DateTime(record.get("exit_time")),
+//                    new BigDecimal(record.get("price"))
+//                            //.replaceAll("[$]", "")),
+//            );
+//            txns.add(pt);
+//        }
+
+        // determine the total revenue for each site taking into account payment status
+
+        Map<Long, BigDecimal> revenueBySite = calculateRevenueBySite(txns);
+        LOGGER.info("Total revenue map: " + revenueBySite);
+
+        Map<Long, Integer> maxOccupancyBySite = calculateMaxOccupancyBySite(txns);
+        LOGGER.info("Max occupancy by site: " + maxOccupancyBySite);
+    }
+
+    // TODO use String constants instead
+    public enum Columns {
+        id("ID"),
+        entryTime("entry time"),
+        exitTime("exit time"),
+        totalPrice("total price"),
+        userId("user ID"),
+        site("site");
+
+        private final String name;
+
+        Columns(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return name;
         }
     }
 }

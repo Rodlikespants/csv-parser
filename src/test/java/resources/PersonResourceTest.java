@@ -1,6 +1,5 @@
 package resources;
 
-import db.PersonDB;
 import models.Person;
 import org.bson.types.ObjectId;
 import org.junit.Before;
