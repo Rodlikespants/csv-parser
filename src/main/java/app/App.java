@@ -1,5 +1,7 @@
 package app;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import config.AppConfig;
 import healthchecks.AppHealthCheck;
 import io.dropwizard.Application;
@@ -16,9 +18,13 @@ public class App extends Application<AppConfig> {
     private static final Logger LOGGER = LoggerFactory.getLogger(App.class);
 
     @Override
-    public void run(AppConfig config, Environment env) {
-        final PersonResource personResource = new PersonResource();
-        env.jersey().register(personResource);
+    public void run(AppConfig config, Environment env) throws Exception {
+        final DependencyInjectionBundle dependencyInjectionBundle = new DependencyInjectionBundle();
+        dependencyInjectionBundle.run(config, env);
+
+        Injector injector = Guice.createInjector(new BasicModule(config, env));
+
+        env.jersey().register(injector.getInstance(PersonResource.class));
 
         env.healthChecks().register("template",
                 new AppHealthCheck(config.getVersion()));
