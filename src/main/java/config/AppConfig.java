@@ -1,10 +1,13 @@
 package config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import db.OrderDAO;
 import db.PersonDAO;
 import io.dropwizard.Configuration;
 import io.dropwizard.db.DataSourceFactory;
+import resources.OrderResource;
 import resources.PersonResource;
+import services.OrderService;
 import services.PersonService;
 
 import javax.validation.Valid;
@@ -64,10 +67,14 @@ public class AppConfig extends Configuration implements DependencyInjectionConfi
      * @return
      */
     public List<Class<?>> getSingletons() {
+        // TODO is there a better way to do this
         final List<Class<?>> result = new ArrayList<>();
         result.add(PersonResource.class);
         result.add(PersonService.class);
         result.add(PersonDAO.class);
+        result.add(OrderResource.class);
+        result.add(OrderService.class);
+        result.add(OrderDAO.class);
 
         return result;
     }
