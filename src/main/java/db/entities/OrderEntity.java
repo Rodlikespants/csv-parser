@@ -18,6 +18,13 @@ public class OrderEntity {
     @Column(name = "source")
     private String source;
 
+    // example join column annotation
+    // @OneToOne(cascade = CascadeType.ALL)
+    //    @JoinColumn(name = "address_id", referencedColumnName = "id")
+
+    // example annotation for joining another entity by a specific field
+    // @OneToOne(mappedBy = "address")
+
     public OrderEntity() {}
 
     public OrderEntity(long id, String source) {
